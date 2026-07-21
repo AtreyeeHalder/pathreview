@@ -31,7 +31,7 @@
 **Reproduction commit link:** [link to commit documenting the reproduced issue]
 
 **Reproduction summary:**
-[1–2 sentences: How did you reproduce the issue? What did you observe?]
+I reproduced the issue by running `.venv/Scripts/python -m pytest tests/unit/test_review_service.py -m unit --cov=core.services.review_service --cov-report=term-missing` and I observed coverage at 22% (below the 40% threshold from Issue 109). The uncovered lines confirm the gap is exactly where the issue says: `process_review` (98-194) and the `_run_*` helpers (202-279) have no tests, while only the three simple CRUD functions (`create_review`, `get_review`, `list_reviews`) are exercised.
 
 **PLAN.md link:** [link to PLAN.md in your fork]
 
