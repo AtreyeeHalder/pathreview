@@ -28,7 +28,7 @@
 
 ## Week 8 — Reproduction & solution planning
 
-**Reproduction commit link:** [link to commit documenting the reproduced issue]
+**Reproduction commit link:** [link to commit documenting the reproduced issue](https://github.com/AtreyeeHalder/pathreview/commit/16157b9055cfc39d98198a5a06b6ed5e9902c847)
 
 **Reproduction summary:**
 I reproduced the issue by running `.venv/Scripts/python -m pytest tests/unit/test_review_service.py -m unit --cov=core.services.review_service --cov-report=term-missing` and I observed coverage at 22% (below the 40% threshold from Issue 109). The uncovered lines confirm the gap is exactly where the issue says: `process_review` (98-194) and the `_run_*` helpers (202-279) have no tests, while only the three simple CRUD functions (`create_review`, `get_review`, `list_reviews`) are exercised.
