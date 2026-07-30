@@ -39,3 +39,36 @@ I reproduced the issue by running `.venv/Scripts/python -m pytest tests/unit/tes
 
 **Blockers or open questions:**
 N/A
+
+---
+
+## Week 9 — Solution building & PR submission
+
+### Check-in 1 (mid-week)
+
+**Current progress:**
+Sub-task 1 (Baseline) from PLAN.md is done: I re-ran `.venv/Scripts/python -m pytest tests/unit/test_review_service.py -m unit --cov=core.services.review_service --cov-report=term-missing` and confirmed the "before" number is **22%**, with `process_review` (98-194) and the `_run_*` helpers (202-279) still uncovered. I've also finalized the mocking approach that avoids the pre-existing `AsyncMock`/`Mock` trap — returning a plain `Mock()` result and setting `.scalars.return_value.first.return_value` explicitly — so my new tests won't inherit the 13 existing failures. The `process_review` and `_run_*` tests themselves (sub-tasks 2–5) are not written yet; the test file currently still only covers `create_review`, `get_review`, and `list_reviews`.
+
+**Next steps:**
+Work through PLAN.md sub-tasks 2–6: add the helper unit tests for `_run_safety_checks`, `_run_agent_orchestration`, `_run_rag_retrieval_generation`, and `_run_ingestion_pipeline`; then the `process_review` success ("complete"), clean-failure ("failed" via missing profile / failed safety checks / review-not-found), and unexpected-exception paths; and finally re-run coverage to confirm the file clears 40% and record the "after" number.
+
+**Blockers:**
+N/A
+
+---
+
+### Check-in 2 (end of week)
+
+**PR link:** [link to your submitted pull request]
+
+**Branch:** [the branch name you worked on, e.g. `fix/123-short-description`]
+
+**What you built:**
+[1–3 sentences summarizing what your fix does and how it works]
+
+**Tests added or updated:**
+[Which test files did you touch? What do they cover?]
+
+**Self-review confirmation:** [ ] make check passes  [ ] make test-unit passes
+
+**Draft PR feedback received from:** [name or Slack handle, or "none"]
