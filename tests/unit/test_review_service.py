@@ -9,6 +9,7 @@ from core.services.review_service import (
     _run_safety_checks,
     _run_agent_orchestration,
     _run_rag_retrieval_generation,
+    _run_ingestion_pipeline,
     create_review,
     get_review,
     list_reviews,
@@ -406,5 +407,22 @@ class TestReviewService:
         assert "sections" in result
         assert "overall_score" in result
         assert isinstance(result["sections"], list)
+    
+    @pytest.mark.asyncio
+    async def test_run_ingestion_pipeline_builds_sources_and_commits(
+        self, mock_db_session: AsyncMock, mock_profile: Mock
+    ) -> None:
+        """Test _run_ingestion_pipeline builds a source per field and commits."""
+        mock_profile.github_username = "octocat"
+        mock_profile.portfolio_url = "https://example.com"
+        mock_profile.resume_text = "Resume body"
+        mock_profile.resume_filename = "resume.pdf"
 
+        with patch("core.services.review_service.IngestedSource"):
+            sources = await _run_ingestion_pipeline(mock_db_session, mock_profile)
 
+        source_types = {s["source_type"] for s in sources}
+        assert source_types == {"github", "portfolio", "resume"}
+        assert len(sources) == 3
+        assert mock_db_session.add.call_count == 3
+        mock_db_session.commit.assert_awaited_once()
