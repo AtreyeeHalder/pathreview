@@ -8,6 +8,7 @@ import asyncio
 from core.services.review_service import (
     _run_safety_checks,
     _run_agent_orchestration,
+    _run_rag_retrieval_generation,
     create_review,
     get_review,
     list_reviews,
@@ -392,3 +393,18 @@ class TestReviewService:
         assert "sections" in result
         assert "overall_score" in result
         assert isinstance(result["sections"], list)
+    
+    @pytest.mark.asyncio
+    async def test_run_rag_retrieval_generation_returns_expected_keys(
+        self, mock_profile: Mock
+    ) -> None:
+        """Test _run_rag_retrieval_generation returns sections and overall_score."""
+        agent_output = {"sections": [], "overall_score": 0.75}
+
+        result = await _run_rag_retrieval_generation(mock_profile, [], agent_output)
+
+        assert "sections" in result
+        assert "overall_score" in result
+        assert isinstance(result["sections"], list)
+
+
