@@ -343,7 +343,7 @@ class TestReviewService:
 
         # Should order by created_at descending
         mock_db_session.execute.assert_called_once()
-    
+
     @pytest.mark.asyncio
     async def test_run_safety_checks_passes_on_valid_output(self) -> None:
         """Test _run_safety_checks returns True for well-formed output."""
@@ -386,7 +386,7 @@ class TestReviewService:
         result = await _run_safety_checks(output)
 
         assert result is False
-    
+
     @pytest.mark.asyncio
     async def test_run_agent_orchestration_returns_expected_keys(self, mock_profile: Mock) -> None:
         """Test _run_agent_orchestration returns sections and overall_score."""
@@ -395,7 +395,7 @@ class TestReviewService:
         assert "sections" in result
         assert "overall_score" in result
         assert isinstance(result["sections"], list)
-    
+
     @pytest.mark.asyncio
     async def test_run_rag_retrieval_generation_returns_expected_keys(
         self, mock_profile: Mock
@@ -408,7 +408,7 @@ class TestReviewService:
         assert "sections" in result
         assert "overall_score" in result
         assert isinstance(result["sections"], list)
-    
+
     @pytest.mark.asyncio
     async def test_run_ingestion_pipeline_builds_sources_and_commits(
         self, mock_db_session: AsyncMock, mock_profile: Mock
