@@ -576,3 +576,44 @@ class TestReviewService:
             await process_review(mock_db_session, mock_review.id, mock_profile.id)
 
         assert mock_review.status == "failed"
+
+    @pytest.mark.asyncio
+    async def test_run_ingestion_pipeline_no_sources_returns_empty_and_commits(
+        self, mock_db_session, mock_profile
+    ):
+        """Test _run_ingestion_pipeline returns [] and still commits when no fields are set."""
+        mock_profile.github_username = None
+        mock_profile.portfolio_url = None
+        mock_profile.resume_text = None
+
+        sources = await _run_ingestion_pipeline(mock_db_session, mock_profile)
+
+        assert sources == []
+        mock_db_session.commit.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_process_review_recovery_failure_is_swallowed(
+        self, mock_db_session, mock_review, mock_profile
+    ):
+        """Test process_review swallows a failure that occurs while setting status='failed'."""
+        review_result = Mock()
+        review_result.scalars.return_value.first.return_value = mock_review
+        profile_result = Mock()
+        profile_result.scalars.return_value.first.return_value = mock_profile
+        recovery_result = Mock()
+        recovery_result.scalars.return_value.first.return_value = mock_review
+        mock_db_session.execute = AsyncMock(
+            side_effect=[review_result, profile_result, recovery_result]
+        )
+        # First commit (status=processing) raises -> outer except; recovery commit also raises.
+        mock_db_session.commit = AsyncMock(side_effect=RuntimeError("db down"))
+
+        # Should not raise despite both commits failing.
+        await process_review(mock_db_session, mock_review.id, mock_profile.id)
+
+    @pytest.mark.asyncio
+    async def test_run_safety_checks_handles_malformed_section(self):
+        """Test _run_safety_checks returns False when a section is not a dict."""
+        result = await _run_safety_checks({"sections": ["not-a-dict"]})
+
+        assert result is False
