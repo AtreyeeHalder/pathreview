@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import asyncio
 
 from core.services.review_service import (
+    _run_safety_checks,
     create_review,
     get_review,
     list_reviews,
@@ -55,7 +56,7 @@ class TestReviewService:
         mock_db_session.commit = AsyncMock()
         mock_db_session.refresh = AsyncMock()
 
-        with patch('core.services.review_service.Review') as MockReview:
+        with patch("core.services.review_service.Review") as MockReview:
             mock_instance = MockReview.return_value
             mock_instance.status = "pending"
             mock_instance.sections = None
@@ -338,3 +339,46 @@ class TestReviewService:
 
         # Should order by created_at descending
         mock_db_session.execute.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_run_safety_checks_passes_on_valid_output(self) -> None:
+        """Test _run_safety_checks returns True for well-formed output."""
+        output = {
+            "sections": [
+                {"section_name": "Skills", "content": "Good", "confidence": 0.8},
+            ],
+            "overall_score": 0.8,
+        }
+
+        result = await _run_safety_checks(output)
+
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_run_safety_checks_fails_on_no_sections(self) -> None:
+        """Test _run_safety_checks returns False when there are no sections."""
+        result = await _run_safety_checks({"sections": []})
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_run_safety_checks_fails_on_incomplete_section(self) -> None:
+        """Test _run_safety_checks returns False when a section is missing content."""
+        output = {"sections": [{"section_name": "Skills", "confidence": 0.8}]}
+
+        result = await _run_safety_checks(output)
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_run_safety_checks_fails_on_out_of_range_confidence(self) -> None:
+        """Test _run_safety_checks returns False when confidence is outside 0..1."""
+        output = {
+            "sections": [
+                {"section_name": "Skills", "content": "Good", "confidence": 1.5},
+            ]
+        }
+
+        result = await _run_safety_checks(output)
+
+        assert result is False
