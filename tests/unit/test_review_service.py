@@ -13,6 +13,7 @@ from core.services.review_service import (
     create_review,
     get_review,
     list_reviews,
+    process_review,
 )
 
 
@@ -426,3 +427,152 @@ class TestReviewService:
         assert len(sources) == 3
         assert mock_db_session.add.call_count == 3
         mock_db_session.commit.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_process_review_success_sets_status_complete(
+        self, mock_db_session, mock_review, mock_profile
+    ):
+        """Test process_review reaches status='complete' and stores sections."""
+        # execute() is called twice: first returns the review, then the profile.
+        review_result = Mock()
+        review_result.scalars.return_value.first.return_value = mock_review
+        profile_result = Mock()
+        profile_result.scalars.return_value.first.return_value = mock_profile
+        mock_db_session.execute = AsyncMock(
+            side_effect=[review_result, profile_result]
+        )
+
+        rag_output = {
+            "sections": [
+                {
+                    "section_name": "Skills",
+                    "content": "Detailed feedback",
+                    "confidence": 0.85,
+                    "suggestions": ["Add metrics"],
+                }
+            ],
+            "overall_score": 0.81,
+        }
+
+        with (
+            patch(
+                'core.services.review_service._run_ingestion_pipeline',
+                new=AsyncMock(return_value=[]),
+            ),
+            patch(
+                'core.services.review_service._run_agent_orchestration',
+                new=AsyncMock(return_value={"sections": [], "overall_score": 0.75}),
+            ),
+            patch(
+                'core.services.review_service._run_rag_retrieval_generation',
+                new=AsyncMock(return_value=rag_output),
+            ),
+            patch(
+                'core.services.review_service._run_safety_checks',
+                new=AsyncMock(return_value=True),
+            ),
+        ):
+            await process_review(mock_db_session, mock_review.id, mock_profile.id)
+
+        assert mock_review.status == "complete"
+        assert mock_review.sections == [
+            {
+                "section_name": "Skills",
+                "content": "Detailed feedback",
+                "confidence": 0.85,
+                "suggestions": ["Add metrics"],
+            }
+        ]
+        assert mock_review.overall_score == 0.81
+
+    @pytest.mark.asyncio
+    async def test_process_review_profile_not_found_sets_failed(
+        self, mock_db_session, mock_review
+    ):
+        """Test process_review sets status='failed' when the profile is missing."""
+        review_result = Mock()
+        review_result.scalars.return_value.first.return_value = mock_review
+        profile_result = Mock()
+        profile_result.scalars.return_value.first.return_value = None
+        mock_db_session.execute = AsyncMock(
+            side_effect=[review_result, profile_result]
+        )
+
+        await process_review(mock_db_session, mock_review.id, uuid4())
+
+        assert mock_review.status == "failed"
+
+    @pytest.mark.asyncio
+    async def test_process_review_safety_fail_sets_failed(
+        self, mock_db_session, mock_review, mock_profile
+    ):
+        """Test process_review sets status='failed' when safety checks fail."""
+        review_result = Mock()
+        review_result.scalars.return_value.first.return_value = mock_review
+        profile_result = Mock()
+        profile_result.scalars.return_value.first.return_value = mock_profile
+        mock_db_session.execute = AsyncMock(
+            side_effect=[review_result, profile_result]
+        )
+
+        with (
+            patch(
+                'core.services.review_service._run_ingestion_pipeline',
+                new=AsyncMock(return_value=[]),
+            ),
+            patch(
+                'core.services.review_service._run_agent_orchestration',
+                new=AsyncMock(return_value={"sections": [], "overall_score": 0.0}),
+            ),
+            patch(
+                'core.services.review_service._run_rag_retrieval_generation',
+                new=AsyncMock(return_value={"sections": []}),
+            ),
+            patch(
+                'core.services.review_service._run_safety_checks',
+                new=AsyncMock(return_value=False),
+            ),
+        ):
+            await process_review(mock_db_session, mock_review.id, mock_profile.id)
+
+        assert mock_review.status == "failed"
+        assert mock_review.sections is None
+
+    @pytest.mark.asyncio
+    async def test_process_review_review_not_found_returns_early(
+        self, mock_db_session
+    ):
+        """Test process_review returns early and does not commit when review is missing."""
+        review_result = Mock()
+        review_result.scalars.return_value.first.return_value = None
+        mock_db_session.execute = AsyncMock(return_value=review_result)
+
+        await process_review(mock_db_session, uuid4(), uuid4())
+
+        mock_db_session.commit.assert_not_awaited()
+        mock_db_session.execute.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_process_review_unexpected_exception_sets_failed(
+        self, mock_db_session, mock_review, mock_profile
+    ):
+        """Test process_review handles an unexpected exception and sets status='failed'."""
+        # execute() is called 3x: review, profile, then again in the except block.
+        review_result = Mock()
+        review_result.scalars.return_value.first.return_value = mock_review
+        profile_result = Mock()
+        profile_result.scalars.return_value.first.return_value = mock_profile
+        recovery_result = Mock()
+        recovery_result.scalars.return_value.first.return_value = mock_review
+        mock_db_session.execute = AsyncMock(
+            side_effect=[review_result, profile_result, recovery_result]
+        )
+
+        with patch(
+            'core.services.review_service._run_ingestion_pipeline',
+            new=AsyncMock(side_effect=RuntimeError("boom")),
+        ):
+            # Should not raise — the outer except handles it.
+            await process_review(mock_db_session, mock_review.id, mock_profile.id)
+
+        assert mock_review.status == "failed"
