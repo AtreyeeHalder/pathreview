@@ -430,8 +430,8 @@ class TestReviewService:
 
     @pytest.mark.asyncio
     async def test_process_review_success_sets_status_complete(
-        self, mock_db_session, mock_review, mock_profile
-    ):
+        self, mock_db_session: AsyncMock, mock_review: Mock, mock_profile: Mock
+    ) -> None:
         """Test process_review reaches status='complete' and stores sections."""
         # execute() is called twice: first returns the review, then the profile.
         review_result = Mock()
@@ -487,8 +487,8 @@ class TestReviewService:
 
     @pytest.mark.asyncio
     async def test_process_review_profile_not_found_sets_failed(
-        self, mock_db_session, mock_review
-    ):
+        self, mock_db_session: AsyncMock, mock_review: Mock
+    ) -> None:
         """Test process_review sets status='failed' when the profile is missing."""
         review_result = Mock()
         review_result.scalars.return_value.first.return_value = mock_review
@@ -504,8 +504,8 @@ class TestReviewService:
 
     @pytest.mark.asyncio
     async def test_process_review_safety_fail_sets_failed(
-        self, mock_db_session, mock_review, mock_profile
-    ):
+        self, mock_db_session: AsyncMock, mock_review: Mock, mock_profile: Mock
+    ) -> None:
         """Test process_review sets status='failed' when safety checks fail."""
         review_result = Mock()
         review_result.scalars.return_value.first.return_value = mock_review
@@ -540,8 +540,8 @@ class TestReviewService:
 
     @pytest.mark.asyncio
     async def test_process_review_review_not_found_returns_early(
-        self, mock_db_session
-    ):
+        self, mock_db_session: AsyncMock
+    ) -> None:
         """Test process_review returns early and does not commit when review is missing."""
         review_result = Mock()
         review_result.scalars.return_value.first.return_value = None
@@ -554,8 +554,8 @@ class TestReviewService:
 
     @pytest.mark.asyncio
     async def test_process_review_unexpected_exception_sets_failed(
-        self, mock_db_session, mock_review, mock_profile
-    ):
+        self, mock_db_session: AsyncMock, mock_review: Mock, mock_profile: Mock
+    ) -> None:
         """Test process_review handles an unexpected exception and sets status='failed'."""
         # execute() is called 3x: review, profile, then again in the except block.
         review_result = Mock()
@@ -579,8 +579,8 @@ class TestReviewService:
 
     @pytest.mark.asyncio
     async def test_run_ingestion_pipeline_no_sources_returns_empty_and_commits(
-        self, mock_db_session, mock_profile
-    ):
+        self, mock_db_session: AsyncMock, mock_profile: Mock
+    ) -> None:
         """Test _run_ingestion_pipeline returns [] and still commits when no fields are set."""
         mock_profile.github_username = None
         mock_profile.portfolio_url = None
@@ -593,8 +593,8 @@ class TestReviewService:
 
     @pytest.mark.asyncio
     async def test_process_review_recovery_failure_is_swallowed(
-        self, mock_db_session, mock_review, mock_profile
-    ):
+        self, mock_db_session: AsyncMock, mock_review: Mock, mock_profile: Mock
+    ) -> None:
         """Test process_review swallows a failure that occurs while setting status='failed'."""
         review_result = Mock()
         review_result.scalars.return_value.first.return_value = mock_review
@@ -612,7 +612,7 @@ class TestReviewService:
         await process_review(mock_db_session, mock_review.id, mock_profile.id)
 
     @pytest.mark.asyncio
-    async def test_run_safety_checks_handles_malformed_section(self):
+    async def test_run_safety_checks_handles_malformed_section(self) -> None:
         """Test _run_safety_checks returns False when a section is not a dict."""
         result = await _run_safety_checks({"sections": ["not-a-dict"]})
 
