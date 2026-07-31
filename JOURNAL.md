@@ -59,7 +59,7 @@ N/A
 
 ### Check-in 2 (end of week)
 
-**PR link:** [link to your submitted pull request]
+**PR link:** [Pull Request for Issue 109](https://github.com/ascherj/pathreview/pull/471)
 
 **Branch:** `test/109-review-service-test-coverage`
 
