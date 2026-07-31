@@ -7,6 +7,7 @@ import asyncio
 
 from core.services.review_service import (
     _run_safety_checks,
+    _run_agent_orchestration,
     create_review,
     get_review,
     list_reviews,
@@ -382,3 +383,12 @@ class TestReviewService:
         result = await _run_safety_checks(output)
 
         assert result is False
+    
+    @pytest.mark.asyncio
+    async def test_run_agent_orchestration_returns_expected_keys(self, mock_profile: Mock) -> None:
+        """Test _run_agent_orchestration returns sections and overall_score."""
+        result = await _run_agent_orchestration(mock_profile, [])
+
+        assert "sections" in result
+        assert "overall_score" in result
+        assert isinstance(result["sections"], list)
