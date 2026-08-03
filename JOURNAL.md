@@ -69,7 +69,7 @@ Additive unit tests for `core/services/review_service.py`. The tests exercise th
 **Tests added or updated:**
 Only `tests/unit/test_review_service.py`. New tests cover: `_run_safety_checks` (valid output passes; no sections, incomplete section, out-of-range confidence, and a malformed non-dict section all fail); `_run_agent_orchestration` and `_run_rag_retrieval_generation` return the expected `sections`/`overall_score` keys; `_run_ingestion_pipeline` builds a source per profile field and commits, and returns `[]` (still committing) when no source fields are set; and `process_review` for the "complete" success path, the "failed" clean-failure paths (missing profile, failed safety checks, missing review → early return with no commit), and the unexpected-exception path (outer `except` sets status="failed", including when the recovery commit itself raises).
 
-**Self-review confirmation:** [x] make check passes  [x] make test-unit passes
+**Self-review confirmation:** [ ] make check passes  [ ] make test-unit passes
 
 _Note: the new tests all pass and the added code is lint-clean. However, the full-suite `make test-unit` and `make check` still surface the pre-existing `AsyncMock`/`Mock` test failures and the associated lint warnings in this file, both documented as out of scope for Issue #109 in the Weeks 7–8 entries above._
 
