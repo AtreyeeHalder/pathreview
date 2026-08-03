@@ -94,20 +94,16 @@ N/A
 ### Reflection
 
 **What was harder than you expected?**
-[Be specific — what part of the process, codebase, or workflow
-surprised you?]
+The hardest part was not writing the tests themselves, but figuring out how the existing service and test patterns behaved in a codebase that already had some unrelated flaky or incompatible test issues. I had to be careful about how I mocked dependencies so I could test the real decision logic in `process_review` without accidentally inheriting old test problems.
 
 **What did you learn about working in a large codebase?**
-[What's different about contributing to someone else's production code
-vs. building your own project?]
+I learned that contributing to someone else's production code is much less about writing code from scratch and much more about reading surrounding conventions, understanding the intent of existing modules, and making changes that fit the repository's style and expectations. It also reinforced that good tests are especially valuable in shared code because they protect behavior across future edits.
 
 **How did AI tools help — and where did they fall short?**
-[Where was AI assistance most useful this module? Where did you need
-to go beyond what AI could give you?]
+AI helped a lot with explaining the service flow, suggesting the major test cases, and helping me structure the unit tests around the success, failure, and exception paths. Where it fell short was in the details: I still had to inspect the actual service implementation and the existing test setup closely, because the repository's edge cases and mocking constraints are too specific for AI to infer perfectly on its own.
 
 **What would you do differently if you started over?**
-[Issue selection, planning, implementation, or process — anything
-you'd change?]
+If I started over, I would spend a little more time at the beginning mapping the service's branches and failure modes into a concrete test checklist before I wrote anything. That would have made the implementation step faster and would have helped me avoid spending time revisiting assumptions about how certain helper functions should behave.
 
 **What are you most proud of from this module?**
-[One thing — it doesn't have to be the PR itself.]
+I am most proud of raising coverage for a core service from a very low baseline to a level that meaningfully protects the review workflow, especially for the error-handling and recovery paths that are easy to overlook.
